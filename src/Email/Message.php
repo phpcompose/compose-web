@@ -31,38 +31,42 @@ final class Message
         $this->body = $body;
     }
 
-    public function setFrom(string $email, ?string $name = null): void
+    public function setFrom(string $email, ?string $name = null): self
     {
         $email = trim($email);
         $name = $name !== null ? trim($name) : null;
-        $this->setFromAddress(self::formatAddress($email, $name));
+        return $this->setFromAddress(self::formatAddress($email, $name));
     }
 
-    public function setFromAddress(string $address): void
+    public function setFromAddress(string $address): self
     {
         $address = trim($address);
         if (!self::isValidAddressString($address)) {
             throw new \InvalidArgumentException('Invalid From address format.');
         }
         $this->fromAddress = $address;
+        return $this;
     }
 
-    public function addTo(string $email, ?string $name = null): void
+    public function addTo(string $email, ?string $name = null): self
     {
         $this->tos[$email] = $name;
+        return $this;
     }
 
-    public function addBcc(string $email, ?string $name = null): void
+    public function addBcc(string $email, ?string $name = null): self
     {
         $this->bccs[$email] = $name;
+        return $this;
     }
 
-    public function addCc(string $email, ?string $name = null): void
+    public function addCc(string $email, ?string $name = null): self
     {
         $this->ccs[$email] = $name;
+        return $this;
     }
 
-    public function addReplyTo(string $email, ?string $name = null): void
+    public function addReplyTo(string $email, ?string $name = null): self
     {
         $email = trim($email);
         if ($email === '') {
@@ -72,6 +76,7 @@ final class Message
             throw new \InvalidArgumentException('Invalid Reply-To email address supplied.');
         }
         $this->replyTos[$email] = $name !== null ? trim($name) : null;
+        return $this;
     }
 
     public function hasReplyTo(): bool
