@@ -1,0 +1,34 @@
+{
+    "name": "compose-web/app",
+    "description": "Compose web app",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "phpcompose/compose": "dev-main"
+    },
+    "repositories": {
+        "phpcompose-local": {
+            "type": "path",
+            "url": "../phpcompose",
+            "options": {
+                "symlink": true
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Compose\\Web\\": "src/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.1"
+    },
+    "scripts": {
+        "serve": "@php -S 0.0.0.0:8080 -t public/",
+        "test": "@php vendor/bin/phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
