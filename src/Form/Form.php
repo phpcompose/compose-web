@@ -17,6 +17,7 @@ final class Form
     public const METHOD_GET  = 'GET';
     public const FORM_KEY    = '__FORM_ID__';
 
+    private static int $counter = 0;
     private string $id;
     private string $method;
 
@@ -33,7 +34,7 @@ final class Form
         string $method = self::METHOD_POST
     ) {
         $this->method = strtoupper($method) === self::METHOD_GET ? self::METHOD_GET : self::METHOD_POST;
-        $this->id = md5($this->action . '-' . microtime(true) . '-' . random_int(PHP_INT_MIN, PHP_INT_MAX));
+        $this->id = $this->generateFormId();
     }
 
     public function getId(): string
@@ -205,5 +206,10 @@ final class Form
         }
 
         return ($payload[self::FORM_KEY] ?? null) === $this->id;
+    }
+    private function generateFormId(): string
+    {
+        self::$counter++;
+        return md5($this->action . '-' . self::$counter);
     }
 }

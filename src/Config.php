@@ -16,6 +16,7 @@ final class Config extends BaseConfig
         $config = parent::__invoke();
 
         $config['services'][\Compose\Web\Security\SessionCsrfTokenProvider::class] = \Compose\Web\Security\SessionCsrfTokenProvider::class;
+        $config['services'][\Compose\Web\Email\Emailer::class] = \Compose\Web\Email\EmailerFactory::class;
 
         return $config;
     }
