@@ -11,9 +11,9 @@ final class ProcessorTest extends TestCase
     public function testFiltersAndValidatesInput(): void
     {
         $processor = new Processor();
-        $processor->addFilterer('name', static fn ($value) => trim((string) $value));
-        $processor->addFilterer('name', static fn ($value) => strtoupper((string) $value));
-        $processor->addValidator('name', static fn ($value) => $value === 'ALICE' ? null : 'Invalid name');
+        $processor->addFilterer(static fn ($value) => trim((string) $value), 'name');
+        $processor->addFilterer(static fn ($value) => strtoupper((string) $value), 'name');
+        $processor->addValidator(static fn ($value) => $value === 'ALICE' ? null : 'Invalid name', 'name');
         $processor->setRequiredValues(['name']);
 
         $result = $processor->process(['name' => '  alice ']);
@@ -36,8 +36,8 @@ final class ProcessorTest extends TestCase
     public function testProcessResultKeepsRawValues(): void
     {
         $processor = new Processor();
-        $processor->addFilterer('age', static fn ($value) => (int) $value);
-        $processor->addValidator('age', static fn ($value) => $value >= 18 ? null : 'Must be an adult');
+        $processor->addFilterer(static fn ($value) => (int) $value, 'age');
+        $processor->addValidator(static fn ($value) => $value >= 18 ? null : 'Must be an adult', 'age');
 
         $result = $processor->process(['age' => '16']);
 
@@ -46,5 +46,18 @@ final class ProcessorTest extends TestCase
         self::assertSame(['age' => 16], $result->values);
         self::assertSame(['age' => ['Must be an adult']], $result->errors);
         self::assertFalse($result->isValid());
+    }
+
+    public function testGlobalFilterersAndValidatorsApplyToAllFields(): void
+    {
+        $processor = new Processor();
+        $processor->addFilterer(static fn ($value) => is_string($value) ? trim($value) : $value);
+        $processor->addValidator(static fn ($value) => $value !== '' ? null : 'Cannot be blank');
+
+        $result = $processor->process(['first' => '  ', 'second' => ' value ']);
+
+        self::assertInstanceOf(Result::class, $result);
+        self::assertSame(['first' => '', 'second' => 'value'], $result->values);
+        self::assertSame(['first' => ['Cannot be blank']], $result->errors);
     }
 }

@@ -9,15 +9,24 @@ final class Processor
     public ?bool $trim = null;
     public string $requiredMessage = 'Required';
 
+    /** @var callable[] */
+    private array $globalFilterers = [];
     /** @var array<string, callable[]> */
     private array $filterers = [];
+    /** @var callable[] */
+    private array $globalValidators = [];
     /** @var array<string, callable[]> */
     private array $validators = [];
     /** @var string[] */
     private array $requiredValues = [];
 
-    public function addFilterer(string|array $names, callable $filterer): self
+    public function addFilterer(callable $filterer, string|array|null $names = null): self
     {
+        if ($names === null) {
+            $this->globalFilterers[] = $filterer;
+            return $this;
+        }
+
         $names = is_array($names) ? $names : [$names];
         foreach ($names as $name) {
             $this->filterers[$name][] = $filterer;
@@ -26,8 +35,13 @@ final class Processor
         return $this;
     }
 
-    public function addValidator(string|array $names, callable $validator): self
+    public function addValidator(callable $validator, string|array|null $names = null): self
     {
+        if ($names === null) {
+            $this->globalValidators[] = $validator;
+            return $this;
+        }
+
         $names = is_array($names) ? $names : [$names];
         foreach ($names as $name) {
             $this->validators[$name][] = $validator;
@@ -50,7 +64,7 @@ final class Processor
         $results = [];
         foreach ($values as $name => $value) {
             $result = $value;
-            $filterers = $this->filterers[$name] ?? [];
+            $filterers = [...$this->globalFilterers, ...($this->filterers[$name] ?? [])];
             foreach ($filterers as $filterer) {
                 $result = $filterer($result);
             }
@@ -80,7 +94,7 @@ final class Processor
 
         if (!$errors) {
             foreach ($values as $name => $value) {
-                $validators = $this->validators[$name] ?? [];
+                $validators = [...$this->globalValidators, ...($this->validators[$name] ?? [])];
                 foreach ($validators as $validator) {
                     $error = $validator($value);
                     if ($error) {
