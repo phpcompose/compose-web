@@ -72,16 +72,16 @@ final class Field
     public function with(array $changes): self
     {
         return new self(
-            name: $changes['name'] ?? $this->name,
-            label: $changes['label'] ?? $this->label,
-            type: $changes['type'] ?? $this->type,
-            value: $changes['value'] ?? $this->value,
-            required: $changes['required'] ?? $this->required,
-            errors: $changes['errors'] ?? $this->errors,
-            help: $changes['help'] ?? $this->help,
-            options: $changes['options'] ?? $this->options,
-            attributes: $changes['attributes'] ?? $this->attributes,
-            wrapperAttributes: $changes['wrapperAttributes'] ?? $this->wrapperAttributes,
+            name: array_key_exists('name', $changes) ? $changes['name'] : $this->name,
+            label: array_key_exists('label', $changes) ? $changes['label'] : $this->label,
+            type: array_key_exists('type', $changes) ? $changes['type'] : $this->type,
+            value: array_key_exists('value', $changes) ? $changes['value'] : $this->value,
+            required: array_key_exists('required', $changes) ? $changes['required'] : $this->required,
+            errors: array_key_exists('errors', $changes) ? $changes['errors'] : $this->errors,
+            help: array_key_exists('help', $changes) ? $changes['help'] : $this->help,
+            options: array_key_exists('options', $changes) ? $changes['options'] : $this->options,
+            attributes: array_key_exists('attributes', $changes) ? $changes['attributes'] : $this->attributes,
+            wrapperAttributes: array_key_exists('wrapperAttributes', $changes) ? $changes['wrapperAttributes'] : $this->wrapperAttributes,
         );
     }
 }

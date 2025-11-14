@@ -46,4 +46,12 @@ final class FieldTest extends TestCase
             $tweaked->toArray()
         );
     }
+
+    public function testWithAllowsExplicitNullValues(): void
+    {
+        $field = new Field('name', 'Label', value: 'foo');
+        $tweaked = $field->with(['value' => null]);
+
+        self::assertNull($tweaked->value);
+    }
 }
