@@ -11,4 +11,12 @@ use Compose\Config as BaseConfig;
  */
 final class Config extends BaseConfig
 {
+    public function __invoke(): array
+    {
+        $config = parent::__invoke();
+
+        $config['services'][\Compose\Web\Security\SessionCsrfTokenProvider::class] = \Compose\Web\Security\SessionCsrfTokenProvider::class;
+
+        return $config;
+    }
 }

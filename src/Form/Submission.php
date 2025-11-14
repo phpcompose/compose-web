@@ -15,11 +15,13 @@ final class Submission
     /**
      * @param Field[] $fields
      * @param array{name:string,value:string} $formIdField
+     * @param array{name:string,value:string}|null $csrfField
      */
     public function __construct(
         private readonly string $action,
         private readonly string $method,
         private readonly array $formIdField,
+        private readonly ?array $csrfField,
         private readonly Result $result,
         private readonly array $fields,
         private readonly bool $submitted
@@ -45,6 +47,14 @@ final class Submission
     public function getFormIdField(): array
     {
         return $this->formIdField;
+    }
+
+    /**
+     * @return array{name:string,value:string}|null
+     */
+    public function getCsrfField(): ?array
+    {
+        return $this->csrfField;
     }
 
     public function isSubmitted(): bool

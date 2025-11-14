@@ -24,6 +24,7 @@ final class SubmissionTest extends TestCase
             action: '/contact',
             method: 'POST',
             formIdField: ['name' => '__FORM_ID__', 'value' => 'abc123'],
+            csrfField: ['name' => '__CSRF__', 'value' => 'token'],
             result: $result,
             fields: $fields,
             submitted: true,

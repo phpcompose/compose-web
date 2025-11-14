@@ -54,4 +54,19 @@ final class FieldTest extends TestCase
 
         self::assertNull($tweaked->value);
     }
+
+    public function testCreateManyBuildsFieldsFromDefinitions(): void
+    {
+        $definitions = [
+            ['name' => 'name', 'label' => 'Name'],
+            ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
+        ];
+
+        $fields = Field::createMany($definitions);
+
+        self::assertCount(2, $fields);
+        self::assertSame('name', $fields[0]->name);
+        self::assertSame('email', $fields[1]->name);
+        self::assertSame('email', $fields[1]->type);
+    }
 }

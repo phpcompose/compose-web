@@ -42,6 +42,15 @@ final class Field
         );
     }
 
+    /**
+     * @param array<int, array<string,mixed>> $definitions
+     * @return Field[]
+     */
+    public static function createMany(array $definitions): array
+    {
+        return array_map(static fn (array $definition): self => self::fromArray($definition), $definitions);
+    }
+
     public function hasErrors(): bool
     {
         return !empty($this->errors);

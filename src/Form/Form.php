@@ -6,6 +6,7 @@ namespace Compose\Web\Form;
 
 use Compose\Web\Form\DTO\Field;
 use Compose\Web\Form\Submission;
+use Compose\Web\Security\CsrfTokenProviderInterface;
 use Compose\Web\Validation\Processor;
 use Compose\Web\Validation\Result;
 use Psr\Http\Message\ServerRequestInterface;
@@ -25,13 +26,13 @@ final class Form
     private array $fieldMap = [];
 
     private ?Processor $processor = null;
+    private ?CsrfTokenProviderInterface $csrfProvider = null;
 
     public function __construct(
         private readonly string $action = '',
         string $method = self::METHOD_POST
     ) {
-        $normalized = strtoupper($method);
-        $this->method = $normalized === self::METHOD_GET ? self::METHOD_GET : self::METHOD_POST;
+        $this->method = strtoupper($method) === self::METHOD_GET ? self::METHOD_GET : self::METHOD_POST;
         $this->id = md5($this->action . '-' . microtime(true) . '-' . random_int(PHP_INT_MIN, PHP_INT_MAX));
     }
 
@@ -112,10 +113,28 @@ final class Form
         return $this->processor ??= new Processor();
     }
 
+    public function setCsrfProvider(CsrfTokenProviderInterface $provider): self
+    {
+        $this->csrfProvider = $provider;
+        return $this;
+    }
+
+    public function getCsrfProvider(): ?CsrfTokenProviderInterface
+    {
+        return $this->csrfProvider;
+    }
+
     public function processRequest(ServerRequestInterface $request): Submission
     {
         $payload = $this->payload($request);
         $submitted = $this->isSubmittedWithPayload($payload, strtoupper($request->getMethod()));
+
+        // CSRF validation
+        $csrfValid = true;
+        if ($submitted && $this->csrfProvider !== null) {
+            $token = $payload[$this->csrfProvider->getFieldName()] ?? null;
+            $csrfValid = $this->csrfProvider->validateToken($this->id, $token);
+        }
 
         // Configure processor with current required fields
         $processor = $this->getProcessor();
@@ -129,9 +148,14 @@ final class Form
             $processor->setRequiredValues($required);
         }
 
-        $result = $submitted
-            ? $processor->process($payload)
-            : new Result($payload, $payload);
+        // Only process if CSRF is valid
+        if ($submitted && !$csrfValid) {
+            $result = new Result($payload, $payload, ['_csrf' => ['CSRF token validation failed']]);
+        } else {
+            $result = $submitted
+                ? $processor->process($payload)
+                : new Result($payload, $payload);
+        }
 
         $fields = array_map(
             fn (Field $field) => $field->with([
@@ -141,10 +165,20 @@ final class Form
             $this->getFields()
         );
 
+        // Generate CSRF token for next render
+        $csrfField = null;
+        if ($this->csrfProvider !== null) {
+            $csrfField = [
+                'name' => $this->csrfProvider->getFieldName(),
+                'value' => $this->csrfProvider->generateToken($this->id),
+            ];
+        }
+
         return new Submission(
             action: $this->action,
             method: $this->method,
             formIdField: $this->getFormIdField(),
+            csrfField: $csrfField,
             result: $result,
             fields: $fields,
             submitted: $submitted
