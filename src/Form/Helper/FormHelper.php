@@ -7,6 +7,7 @@ namespace Compose\Web\Form\Helper;
 use Compose\Template\Helper\HelperRegistryAwareInterface;
 use Compose\Template\Helper\HelperRegistryInterface;
 use Compose\Template\Helper\TagHelper;
+use Compose\Web\Form\Submission;
 use Compose\Web\Form\DTO\Field;
 use Throwable;
 
@@ -19,25 +20,15 @@ final class FormHelper implements HelperRegistryAwareInterface
 
     public function setHelperRegistry(HelperRegistryInterface $registry): void
     {
-        $tagHelper = null;
-
-        try {
-            $tagHelper = $registry->get(TagHelper::class);
-        } catch (Throwable) {
-            try {
-                $tagHelper = $registry->get('tag');
-            } catch (Throwable) {
-                $tagHelper = null;
-            }
-        }
-
-        $this->tag = $tagHelper instanceof TagHelper ? $tagHelper : new TagHelper();
+        $this->tag = $registry->get(TagHelper::class);
     }
 
     public function __invoke(): static
     {
         return $this;
     }
+
+
 
     public function formControl(Field $field, array $attributes = []): string
     {
@@ -56,14 +47,14 @@ final class FormHelper implements HelperRegistryAwareInterface
         $attributes = $this->inputAttributes($field, $attributes, false);
         $selectHtml = $this->formSelectElement($field, $attributes);
 
-        return $this->wrapControl($field, $selectHtml);
+        return $this->wrapControl($field, inputHtml: $selectHtml);
     }
 
     public function formCheck(Field $field, array $attributes = []): string
     {
         $attributes = $this->inputAttributes($field, $attributes, false);
         $attributes['type'] = $field->type === 'radio' ? 'radio' : 'checkbox';
-        $attributes['class'] = trim(($attributes['class'] ?? '') . ' form-check-input');
+        $attributes = $this->appendClass($attributes, 'form-check-input');
 
         if (!empty($field->value)) {
             $attributes['checked'] = 'checked';
@@ -71,18 +62,9 @@ final class FormHelper implements HelperRegistryAwareInterface
 
         $input = $this->tag()->tag('input', null, $this->inputElementAttributes($field, $attributes));
 
-        $labelAttrib = [
-            'for' => $attributes['id'] ?? $field->name,
-            'class' => 'form-check-label',
-        ];
-        $label = $this->tag()->tag('label', $field->label, $labelAttrib);
+        $label = $this->buildLabel($field, $attributes['id'] ?? $field->name, 'form-check-label');
 
-        $body = $input . $label;
-        if ($field->hasErrors()) {
-            $body .= $this->errorFeedback($field);
-        } elseif ($field->help) {
-            $body .= $this->helpText($field->help);
-        }
+        $body = $input . $label . $this->appendFeedback($field);
 
         return $this->tag()->tag('div', $body, [
             'class' => trim('form-check ' . ($field->wrapperAttributes['class'] ?? '')),
@@ -92,21 +74,10 @@ final class FormHelper implements HelperRegistryAwareInterface
     private function wrapControl(Field $field, string $inputHtml): string
     {
         $id = $field->attributes['id'] ?? $field->name;
-        $label = $this->tag()->tag('label', $this->labelText($field), [
-            'for' => $id,
-            'class' => 'form-label',
-        ]);
+        $label = $this->buildLabel($field, $id, 'form-label');
 
-        $content = $label . $inputHtml;
-
-        if ($field->hasErrors()) {
-            $content .= $this->errorFeedback($field);
-        } elseif ($field->help) {
-            $content .= $this->helpText($field->help);
-        }
-
-        $wrapperAttrib = $field->wrapperAttributes;
-        $wrapperAttrib['class'] = trim(($wrapperAttrib['class'] ?? '') . ' mb-3');
+        $content = $label . $inputHtml . $this->appendFeedback($field);
+        $wrapperAttrib = $this->appendClass($field->wrapperAttributes, 'mb-3');
 
         return $this->tag()->tag('div', $content, $wrapperAttrib);
     }
@@ -118,17 +89,26 @@ final class FormHelper implements HelperRegistryAwareInterface
         $attributes['id'] = $attributes['id'] ?? $field->name;
 
         $classes = $attributes['class'] ?? '';
+        $attributes['class'] = trim($classes);
+
         if ($withControlClass) {
-            $classes = trim($classes . ' form-control');
+            $attributes = $this->appendClass($attributes, 'form-control');
         }
         if ($field->hasErrors()) {
-            $classes = trim($classes . ' is-invalid');
+            $attributes = $this->appendClass($attributes, 'is-invalid');
         }
-        $attributes['class'] = trim($classes);
 
         if ($field->required) {
             $attributes['required'] = 'required';
         }
+
+        return $attributes;
+    }
+
+    private function appendClass(array $attributes, string $class): array
+    {
+        $current = $attributes['class'] ?? '';
+        $attributes['class'] = trim($current . ' ' . $class);
 
         return $attributes;
     }
@@ -174,19 +154,31 @@ final class FormHelper implements HelperRegistryAwareInterface
         return $this->tag()->tag('option', (string) $label, $attributes);
     }
 
-    private function errorFeedback(Field $field): string
+    private function appendFeedback(Field $field): string
     {
-        return $this->tag()->tag('div', implode(' ', $field->errors), ['class' => 'invalid-feedback']);
+        $html = '';
+
+        if ($field->hasErrors()) {
+            $html .= $this->tag()->tag('div', implode(' ', $field->errors), ['class' => 'invalid-feedback']);
+        }
+
+        if ($field->help) {
+            $html .= $this->tag()->tag('div', $field->help, ['class' => 'form-text']);
+        }
+
+        return $html;
     }
 
-    private function helpText(string $help): string
+    private function buildLabel(Field $field, string $for, string $class): string
     {
-        return $this->tag()->tag('div', $help, ['class' => 'form-text']);
-    }
+        $labelText = $field->required
+            ? $field->label . ' <span class="text-danger">*</span>'
+            : $field->label;
 
-    private function labelText(Field $field): string
-    {
-        return $field->required ? $field->label . ' <span class="text-danger">*</span>' : $field->label;
+        return $this->tag()->tag('label', $labelText, [
+            'for' => $for,
+            'class' => $class,
+        ]);
     }
 
     private function tag(): TagHelper
@@ -196,5 +188,64 @@ final class FormHelper implements HelperRegistryAwareInterface
         }
 
         return $this->tag;
+    }
+
+    public function render(Field|Submission $formOrField): string
+    {
+        if ($formOrField instanceof Submission) {
+            return $this->renderForm($formOrField);
+        }
+        if ($formOrField instanceof Field) {
+            return $this->renderField($formOrField);
+        }
+        throw new \InvalidArgumentException('Argument must be instance of Field or Submission');
+    }
+
+    public function renderForm(Submission $form, array $attributes = []): string
+    {
+        $attributes['action'] ??= $form->getAction();
+        $attributes['method'] ??= strtolower($form->getMethod());
+
+        $inner = '';
+
+        $formId = $form->getFormIdField();
+        $inner .= $this->tag()->tag('input', null, [
+            'type' => 'hidden',
+            'name' => $formId['name'],
+            'value' => $formId['value'],
+        ]);
+
+        if ($csrf = $form->getCsrfField()) {
+            $inner .= $this->tag()->tag('input', null, [
+                'type' => 'hidden',
+                'name' => $csrf['name'],
+                'value' => $csrf['value'],
+            ]);
+        }
+
+        foreach ($form->getFields() as $field) {
+            $inner .= $this->renderField($field);
+        }
+
+        return $this->tag()->tag('form', $inner, $attributes);
+    }
+
+    public function renderField(Field $field, array $attributes = []): string
+    {
+        return match ($field->type) {
+            'checkbox', 'radio' => $this->formCheck($field, $attributes),
+            'select' => $this->formSelect($field, $attributes),
+            default => $this->formControl($field, $attributes),
+        };
+    }
+
+    public function render_form(Submission $form, array $attributes = []) : string
+    {
+        return $this->renderForm($form, $attributes);
+    }
+
+    public function render_field(Field $field, array $attributes = []) : string
+    {
+        return $this->renderField($field, $attributes);
     }
 }
