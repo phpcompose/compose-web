@@ -6,7 +6,6 @@ namespace Compose\Web\Form\Helper;
 
 use Compose\Template\Helper\HelperRegistryAwareInterface;
 use Compose\Template\Helper\HelperRegistryInterface;
-use Compose\Template\Helper\TagHelper;
 use Compose\Web\Form\Submission;
 use Compose\Web\Form\DTO\Field;
 use Throwable;
@@ -16,11 +15,11 @@ use Throwable;
  */
 final class FormHelper implements HelperRegistryAwareInterface
 {
-    private ?TagHelper $tag = null;
+    private ?HelperRegistryInterface $helpers = null;
 
     public function setHelperRegistry(HelperRegistryInterface $registry): void
     {
-        $this->tag = $registry->get(TagHelper::class);
+        $this->helpers = $registry;
     }
 
     public function __invoke(): static
@@ -34,9 +33,9 @@ final class FormHelper implements HelperRegistryAwareInterface
     {
         $attributes = $this->inputAttributes($field, $attributes, $field->type !== 'select');
         $inputHtml = match ($field->type) {
-            'textarea' => $this->tag()->tag('textarea', (string) ($field->value ?? ''), $attributes),
+            'textarea' => $this->helpers->tag('textarea', (string) ($field->value ?? ''), $attributes),
             'select' => $this->formSelectElement($field, $attributes),
-            default => $this->tag()->tag('input', null, $this->inputElementAttributes($field, $attributes)),
+            default => $this->helpers->tag('input', null, $this->inputElementAttributes($field, $attributes)),
         };
 
         return $this->wrapControl($field, $inputHtml);
@@ -60,13 +59,13 @@ final class FormHelper implements HelperRegistryAwareInterface
             $attributes['checked'] = 'checked';
         }
 
-        $input = $this->tag()->tag('input', null, $this->inputElementAttributes($field, $attributes));
+        $input = $this->helpers->tag('input', null, $this->inputElementAttributes($field, $attributes));
 
         $label = $this->buildLabel($field, $attributes['id'] ?? $field->name, 'form-check-label');
 
         $body = $input . $label . $this->appendFeedback($field);
 
-        return $this->tag()->tag('div', $body, [
+        return $this->helpers->tag('div', $body, [
             'class' => trim('form-check ' . ($field->wrapperAttributes['class'] ?? '')),
         ]);
     }
@@ -79,7 +78,7 @@ final class FormHelper implements HelperRegistryAwareInterface
         $content = $label . $inputHtml . $this->appendFeedback($field);
         $wrapperAttrib = $this->appendClass($field->wrapperAttributes, 'mb-3');
 
-        return $this->tag()->tag('div', $content, $wrapperAttrib);
+        return $this->helpers->tag('div', $content, $wrapperAttrib);
     }
 
     private function inputAttributes(Field $field, array $overrides = [], bool $withControlClass = true): array
@@ -134,14 +133,14 @@ final class FormHelper implements HelperRegistryAwareInterface
                 foreach ($label as $optionValue => $optionLabel) {
                     $groupOptions .= $this->optionTag($field, $optionValue, $optionLabel);
                 }
-                $optionsHtml .= $this->tag()->tag('optgroup', $groupOptions, ['label' => (string) $value]);
+                $optionsHtml .= $this->helpers->tag('optgroup', $groupOptions, ['label' => (string) $value]);
                 continue;
             }
 
             $optionsHtml .= $this->optionTag($field, $value, $label);
         }
 
-        return $this->tag()->tag('select', $optionsHtml, $attributes);
+        return $this->helpers->tag('select', $optionsHtml, $attributes);
     }
 
     private function optionTag(Field $field, string|int $value, mixed $label): string
@@ -151,7 +150,7 @@ final class FormHelper implements HelperRegistryAwareInterface
             $attributes['selected'] = 'selected';
         }
 
-        return $this->tag()->tag('option', (string) $label, $attributes);
+        return $this->helpers->tag('option', (string) $label, $attributes);
     }
 
     private function appendFeedback(Field $field): string
@@ -159,11 +158,11 @@ final class FormHelper implements HelperRegistryAwareInterface
         $html = '';
 
         if ($field->hasErrors()) {
-            $html .= $this->tag()->tag('div', implode(' ', $field->errors), ['class' => 'invalid-feedback']);
+            $html .= $this->helpers->tag('div', implode(' ', $field->errors), ['class' => 'invalid-feedback']);
         }
 
         if ($field->help) {
-            $html .= $this->tag()->tag('div', $field->help, ['class' => 'form-text']);
+            $html .= $this->helpers->tag('div', $field->help, ['class' => 'form-text']);
         }
 
         return $html;
@@ -175,19 +174,10 @@ final class FormHelper implements HelperRegistryAwareInterface
             ? $field->label . ' <span class="text-danger">*</span>'
             : $field->label;
 
-        return $this->tag()->tag('label', $labelText, [
+        return $this->helpers->tag('label', $labelText, [
             'for' => $for,
             'class' => $class,
         ]);
-    }
-
-    private function tag(): TagHelper
-    {
-        if ($this->tag === null) {
-            $this->tag = new TagHelper();
-        }
-
-        return $this->tag;
     }
 
     public function render(Field|Submission $formOrField): string
@@ -209,14 +199,14 @@ final class FormHelper implements HelperRegistryAwareInterface
         $inner = '';
 
         $formId = $form->getFormIdField();
-        $inner .= $this->tag()->tag('input', null, [
+        $inner .= $this->helpers->tag('input', null, [
             'type' => 'hidden',
             'name' => $formId['name'],
             'value' => $formId['value'],
         ]);
 
         if ($csrf = $form->getCsrfField()) {
-            $inner .= $this->tag()->tag('input', null, [
+            $inner .= $this->helpers->tag('input', null, [
                 'type' => 'hidden',
                 'name' => $csrf['name'],
                 'value' => $csrf['value'],
@@ -227,7 +217,12 @@ final class FormHelper implements HelperRegistryAwareInterface
             $inner .= $this->renderField($field);
         }
 
-        return $this->tag()->tag('form', $inner, $attributes);
+        $inner .= $this->helpers->tag('button', 'Send', [
+            'type' => 'submit',
+            'class' => 'btn btn-primary',
+        ]);
+
+        return $this->helpers->tag('form', $inner, $attributes);
     }
 
     public function renderField(Field $field, array $attributes = []): string

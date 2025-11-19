@@ -1,0 +1,25 @@
+<?php
+$this->layout = 'layout::main';
+/** @var \Compose\Web\Form\Submission $form */
+?>
+
+<section class="row justify-content-center">
+    <div class="col-lg-8">
+        <header class="mb-4">
+            <h1 class="h4 mb-0">Contact us</h1>
+            <p class="text-muted mb-0">We would love to hear from you.</p>
+        </header>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <?php if ($form->isValidSubmit()): ?>
+                    <div class="alert alert-success">Thanks! Your message has been received.</div>
+                <?php elseif ($form->isSubmitted() && !$form->isValid()): ?>
+                    <div class="alert alert-danger">Please correct the highlighted fields.</div>
+                <?php endif; ?>
+
+                <?= $this->helpers->form->renderForm($form) ?>
+            </div>
+        </div>
+    </div>
+</section>

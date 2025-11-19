@@ -67,6 +67,11 @@ final class Submission
         return $this->result->isValid();
     }
 
+    public function isValidSubmit() : bool
+    {
+        return $this->isSubmitted() && $this->isValid();
+    }
+
     public function getResult(): Result
     {
         return $this->result;
