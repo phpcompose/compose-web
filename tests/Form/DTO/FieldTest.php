@@ -41,7 +41,6 @@ final class FieldTest extends TestCase
                 'help' => null,
                 'options' => [],
                 'attributes' => [],
-                'wrapperAttributes' => [],
             ],
             $tweaked->toArray()
         );

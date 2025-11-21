@@ -16,6 +16,7 @@ final class Submission
      * @param Field[] $fields
      * @param array{name:string,value:string} $formIdField
      * @param array{name:string,value:string}|null $csrfField
+     * @param string[] $submissionErrors
      */
     public function __construct(
         private readonly string $action,
@@ -24,7 +25,8 @@ final class Submission
         private readonly ?array $csrfField,
         private readonly Result $result,
         private readonly array $fields,
-        private readonly bool $submitted
+        private readonly bool $submitted,
+        private readonly array $submissionErrors = [],
     ) {
         foreach ($fields as $field) {
             $this->fieldMap[$field->name] = $field;
@@ -64,7 +66,7 @@ final class Submission
 
     public function isValid(): bool
     {
-        return $this->result->isValid();
+        return $this->result->isValid() && $this->submissionErrors === [];
     }
 
     public function isValidSubmit() : bool
@@ -99,6 +101,19 @@ final class Submission
     public function getErrors(): array
     {
         return $this->result->errors;
+    }
+
+    public function hasSubmissionErrors(): bool
+    {
+        return $this->submissionErrors !== [];
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getSubmissionErrors(): array
+    {
+        return $this->submissionErrors;
     }
 
     /**

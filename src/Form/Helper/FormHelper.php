@@ -76,7 +76,7 @@ final class FormHelper implements HelperRegistryAwareInterface
         $label = $this->buildLabel($field, $id, 'form-label');
 
         $content = $label . $inputHtml . $this->appendFeedback($field);
-        $wrapperAttrib = $this->appendClass($field->wrapperAttributes, 'mb-3');
+        $wrapperAttrib = ['class' => 'mb-3'];
 
         return $this->helpers->tag('div', $content, $wrapperAttrib);
     }

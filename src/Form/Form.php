@@ -136,6 +136,7 @@ final class Form
             $token = $payload[$this->csrfProvider->getFieldName()] ?? null;
             $csrfValid = $this->csrfProvider->validateToken($this->id, $token);
         }
+        $submissionErrors = [];
 
         // Configure processor with current required fields
         $processor = $this->getProcessor();
@@ -152,6 +153,7 @@ final class Form
         // Only process if CSRF is valid
         if ($submitted && !$csrfValid) {
             $result = new Result($payload, $payload, ['_csrf' => ['CSRF token validation failed']]);
+            $submissionErrors[] = 'Security validation failed. Please refresh and try again.';
         } else {
             $result = $submitted
                 ? $processor->process($payload)
@@ -182,7 +184,8 @@ final class Form
             csrfField: $csrfField,
             result: $result,
             fields: $fields,
-            submitted: $submitted
+            submitted: $submitted,
+            submissionErrors: $submissionErrors,
         );
     }
 

@@ -19,12 +19,11 @@ final class Field
         public readonly ?string $help = null,
         public readonly array $options = [],
         public readonly array $attributes = [],
-        public readonly array $wrapperAttributes = [],
     ) {
     }
 
     /**
-     * @param array{name:string,label:string,type?:string,value?:mixed,required?:bool,errors?:array,help?:string|null,options?:array,attributes?:array,wrapperAttributes?:array} $data
+     * @param array{name:string,label:string,type?:string,value?:mixed,required?:bool,errors?:array,help?:string|null,options?:array,attributes?:array} $data
      */
     public static function fromArray(array $data): self
     {
@@ -38,7 +37,6 @@ final class Field
             help: $data['help'] ?? null,
             options: $data['options'] ?? [],
             attributes: $data['attributes'] ?? [],
-            wrapperAttributes: $data['wrapperAttributes'] ?? [],
         );
     }
 
@@ -71,7 +69,6 @@ final class Field
             'help' => $this->help,
             'options' => $this->options,
             'attributes' => $this->attributes,
-            'wrapperAttributes' => $this->wrapperAttributes,
         ];
     }
 
@@ -90,7 +87,6 @@ final class Field
             help: array_key_exists('help', $changes) ? $changes['help'] : $this->help,
             options: array_key_exists('options', $changes) ? $changes['options'] : $this->options,
             attributes: array_key_exists('attributes', $changes) ? $changes['attributes'] : $this->attributes,
-            wrapperAttributes: array_key_exists('wrapperAttributes', $changes) ? $changes['wrapperAttributes'] : $this->wrapperAttributes,
         );
     }
 }
