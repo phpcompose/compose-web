@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: compose_web
+      POSTGRES_USER: compose_web
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U compose_web -d compose_web"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  web:
+    image: php:8.4-cli
+    working_dir: /app
+    command: ["php", "-S", "0.0.0.0:8080", "-t", "public"]
+    volumes:
+      - ./:/app
+      - ../phpcompose:/phpcompose
+    ports:
+      - "8001:8080"
+    environment:
+      DB_URL: pgsql://compose_web:secret@db:5432/compose_web
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
