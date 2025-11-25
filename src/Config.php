@@ -60,6 +60,7 @@ final class Config extends BaseConfig
                 \Compose\Web\Auth\AuthenticatorInterface::class => \Compose\Web\Auth\PasswordAuthenticator::class,
                 \Compose\Web\Auth\AuthService::class => \Compose\Web\Auth\AuthServiceFactory::class,
                 \Compose\Web\Module\User\UserServiceInterface::class => \Compose\Web\Module\User\UserService::class,
+                \Compose\Web\Auth\Middleware\AuthGuardMiddleware::class => \Compose\Web\Auth\Middleware\AuthGuardMiddleware::class,
             ],
             'templates' => [
                 'layout' => 'layout::main',
@@ -86,6 +87,15 @@ final class Config extends BaseConfig
                 'storage' => \Compose\Web\Auth\SessionAuthStorage::class,
                 'authenticators' => [
                     \Compose\Web\Auth\PasswordAuthenticator::class,
+                ],
+                'login_url' => '/auth/login',
+                'login_redirect_param' => 'redirect',
+                'guard' => [
+                    'protected' => [
+                        '/user',
+                        '/account',
+                    ],
+                    'exempt' => [],
                 ],
             ],
         ];

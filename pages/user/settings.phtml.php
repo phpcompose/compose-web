@@ -19,12 +19,7 @@ return new class implements ContainerAwareInterface {
 
     public function __invoke(ServerRequestInterface $request): array|RedirectResponse
     {
-        /** @var AuthService $auth */
-        $auth = $this->getContainer()->get(AuthService::class);
-        $identity = $auth->currentIdentity();
-        if ($identity === null) {
-            return new RedirectResponse('/auth/login');
-        }
+        $identity = $this->getContainer()->get(AuthService::class)->currentIdentity();
 
         $container = $this->getContainer();
         /** @var FormBuilder $builder */
