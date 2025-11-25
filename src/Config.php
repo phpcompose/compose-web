@@ -71,6 +71,9 @@ final class Config extends BaseConfig
                     'form' => FormHelper::class,
                 ],
             ],
+            'middleware' => [
+                10 => \Compose\Web\Auth\Middleware\AuthGuardMiddleware::class,
+            ],
             'email' => [
                 'plugin' => $defaultPlugin,
                 'options' => [],
