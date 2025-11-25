@@ -66,7 +66,7 @@ final class Processor
             $result = $value;
             $filterers = [...$this->globalFilterers, ...($this->filterers[$name] ?? [])];
             foreach ($filterers as $filterer) {
-                $result = $filterer($result);
+                $result = $filterer($result, $values);
             }
 
             $results[$name] = $result;
@@ -96,7 +96,7 @@ final class Processor
             foreach ($values as $name => $value) {
                 $validators = [...$this->globalValidators, ...($this->validators[$name] ?? [])];
                 foreach ($validators as $validator) {
-                    $error = $validator($value);
+                    $error = $validator($value, $values);
                     if ($error) {
                         $errors[$name][] = $error;
                     }
@@ -115,4 +115,5 @@ final class Processor
 
         return new Result($raw, $filtered, $errors);
     }
+
 }

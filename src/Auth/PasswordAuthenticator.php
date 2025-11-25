@@ -6,12 +6,12 @@ namespace Compose\Web\Auth;
 
 use Compose\Container\ResolvableInterface;
 use Compose\Web\Auth\Exception\InvalidCredentialsException;
-use Compose\Web\Module\User\Repository\UserRepositoryInterface;
+use Compose\Web\Module\User\UserServiceInterface;
 
 final class PasswordAuthenticator implements AuthenticatorInterface, ResolvableInterface
 {
     public function __construct(
-        private readonly UserRepositoryInterface $users,
+        private readonly UserServiceInterface $users,
         private readonly PasswordHasherInterface $hasher
     ) {
     }
@@ -28,7 +28,7 @@ final class PasswordAuthenticator implements AuthenticatorInterface, ResolvableI
             throw new InvalidCredentialsException('Password is required.');
         }
 
-        $user = $this->users->findByEmail($credential->getIdentifier());
+        $user = $this->users->getByEmail($credential->getIdentifier());
         if ($user === null || !$user->isActive()) {
             throw new InvalidCredentialsException('Invalid credentials.');
         }

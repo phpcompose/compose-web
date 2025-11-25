@@ -60,7 +60,7 @@ return new class implements ContainerAwareInterface {
                 /** @var AuthService $auth */
                 $auth = $container->get(AuthService::class);
                 $auth->authenticate($cred);
-                return new RedirectResponse('/user/dashboard');
+                return new RedirectResponse('/user/');
             } catch (InvalidCredentialsException $e) {
                 $submission = $submission->withSubmissionError('Invalid email or password.');
             }

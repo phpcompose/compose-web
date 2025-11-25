@@ -55,11 +55,11 @@ final class Config extends BaseConfig
                         'password' => $_ENV['DB_PASSWORD'] ?? null,
                     ]);
                 },
-                \Compose\Web\Module\User\Repository\UserRepositoryInterface::class => \Compose\Web\Module\User\Repository\DbalUserRepository::class,
                 \Compose\Web\Auth\AuthStorageInterface::class => \Compose\Web\Auth\SessionAuthStorage::class,
                 \Compose\Web\Auth\PasswordHasherInterface::class => \Compose\Web\Auth\PasswordHasher::class,
                 \Compose\Web\Auth\AuthenticatorInterface::class => \Compose\Web\Auth\PasswordAuthenticator::class,
                 \Compose\Web\Auth\AuthService::class => \Compose\Web\Auth\AuthServiceFactory::class,
+                \Compose\Web\Module\User\UserServiceInterface::class => \Compose\Web\Module\User\UserService::class,
             ],
             'templates' => [
                 'layout' => 'layout::main',
