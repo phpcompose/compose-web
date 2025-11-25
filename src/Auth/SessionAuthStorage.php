@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Compose\Web\Auth;
 
 use Compose\Http\Session\Session;
+use Compose\Container\ResolvableInterface;
 
 /**
  * Stores the current identity in the HTTP session.
  */
-final class SessionAuthStorage implements AuthStorageInterface
+final class SessionAuthStorage implements AuthStorageInterface, ResolvableInterface
 {
     private const SESSION_KEY = '__AUTH_IDENTITY__';
 

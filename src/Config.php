@@ -40,6 +40,26 @@ final class Config extends BaseConfig
                 \Compose\Web\Email\Emailer::class => \Compose\Web\Email\EmailerFactory::class,
                 \Compose\Web\Email\Plugin\LogPlugin::class => \Compose\Web\Email\Plugin\LogPlugin::class,
                 \Compose\Web\Email\Plugin\PhpMailerPlugin::class => \Compose\Web\Email\Plugin\PhpMailerPlugin::class,
+                \Doctrine\DBAL\Connection::class => static function () {
+                    $url = $_ENV['DB_URL'] ?? null;
+                    if ($url) {
+                        return \Doctrine\DBAL\DriverManager::getConnection(['url' => $url]);
+                    }
+
+                    return \Doctrine\DBAL\DriverManager::getConnection([
+                        'driver' => $_ENV['DB_DRIVER'] ?? 'pdo_mysql',
+                        'host' => $_ENV['DB_HOST'] ?? '127.0.0.1',
+                        'port' => $_ENV['DB_PORT'] ?? null,
+                        'dbname' => $_ENV['DB_NAME'] ?? null,
+                        'user' => $_ENV['DB_USER'] ?? null,
+                        'password' => $_ENV['DB_PASSWORD'] ?? null,
+                    ]);
+                },
+                \Compose\Web\Module\User\Repository\UserRepositoryInterface::class => \Compose\Web\Module\User\Repository\DbalUserRepository::class,
+                \Compose\Web\Auth\AuthStorageInterface::class => \Compose\Web\Auth\SessionAuthStorage::class,
+                \Compose\Web\Auth\PasswordHasherInterface::class => \Compose\Web\Auth\PasswordHasher::class,
+                \Compose\Web\Auth\AuthenticatorInterface::class => \Compose\Web\Auth\PasswordAuthenticator::class,
+                \Compose\Web\Auth\AuthService::class => \Compose\Web\Auth\AuthServiceFactory::class,
             ],
             'templates' => [
                 'layout' => 'layout::main',
@@ -60,6 +80,12 @@ final class Config extends BaseConfig
                     'username' => Env::get('SMTP_USERNAME', 'smtp-user@example.com'),
                     'password' => Env::get('SMTP_PASSWORD', 'app-password'),
                     'secure' => Env::get('SMTP_SECURE', 'tls'),
+                ],
+            ],
+            'auth' => [
+                'storage' => \Compose\Web\Auth\SessionAuthStorage::class,
+                'authenticators' => [
+                    \Compose\Web\Auth\PasswordAuthenticator::class,
                 ],
             ],
         ];

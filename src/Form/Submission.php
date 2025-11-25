@@ -82,9 +82,22 @@ final class Submission
     /**
      * @return array<string, mixed>
      */
-    public function getValues(): array
+    public function getValues(?array $keys = null): array
     {
-        return $this->result->values;
+        $values = $this->result->values;
+
+        if ($keys === null) {
+            return $values;
+        }
+
+        $filtered = [];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $values)) {
+                $filtered[$key] = $values[$key];
+            }
+        }
+
+        return $filtered;
     }
 
     /**
@@ -114,6 +127,30 @@ final class Submission
     public function getSubmissionErrors(): array
     {
         return $this->submissionErrors;
+    }
+
+    /**
+     * @param string[] $errors
+     */
+    public function withSubmissionErrors(array $errors): self
+    {
+        return new self(
+            action: $this->action,
+            method: $this->method,
+            formIdField: $this->formIdField,
+            csrfField: $this->csrfField,
+            result: $this->result,
+            fields: $this->fields,
+            submitted: $this->submitted,
+            submissionErrors: $errors,
+        );
+    }
+
+    public function withSubmissionError(string $error): self
+    {
+        $errors = $this->submissionErrors;
+        $errors[] = $error;
+        return $this->withSubmissionErrors($errors);
     }
 
     /**
