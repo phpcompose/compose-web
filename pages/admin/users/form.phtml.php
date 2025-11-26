@@ -10,6 +10,7 @@ use Compose\Web\Validation\Validator\EmailAddress;
 use Compose\Web\Validation\Validator\MatchField;
 use Compose\Web\Validation\Validator\StringLength;
 use Compose\Web\Module\User\Repository\DbalUserRepository;
+use Compose\Web\Auth\PasswordHasherInterface;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Laminas\Diactoros\Response\RedirectResponse;
 use Psr\Http\Message\ServerRequestInterface;
@@ -17,7 +18,7 @@ use Psr\Http\Message\ServerRequestInterface;
 return new class implements ContainerAwareInterface {
     use ContainerAwareTrait;
 
-    public function __invoke(ServerRequestInterface $request, int $id): array|RedirectResponse
+    public function __invoke(ServerRequestInterface $request, int|string|null $id = null): array|RedirectResponse
     {
         $identity = $this->getContainer()->get(AuthService::class)->currentIdentity();
         if ($identity === null) {
@@ -26,9 +27,13 @@ return new class implements ContainerAwareInterface {
 
         /** @var DbalUserRepository $repo */
         $repo = $this->getContainer()->get(DbalUserRepository::class);
-        $user = $repo->findById($id);
-        if ($user === null) {
-            return new RedirectResponse('/admin/users');
+        $user = null;
+        $isEdit = $id !== null && $id !== '';
+        if ($isEdit) {
+            $user = $repo->findById((int) $id);
+            if ($user === null) {
+                return new RedirectResponse('/admin/users');
+            }
         }
 
         /** @var FormBuilder $builder */
@@ -39,7 +44,6 @@ return new class implements ContainerAwareInterface {
                 'label' => 'Email',
                 'type' => 'email',
                 'required' => true,
-                'value' => $user->getEmail(),
                 'filters' => [TrimString::class => null],
                 'validators' => [EmailAddress::class => null],
             ],
@@ -47,7 +51,6 @@ return new class implements ContainerAwareInterface {
                 'label' => 'Username',
                 'type' => 'text',
                 'required' => false,
-                'value' => $user->getUsername(),
                 'filters' => [TrimString::class => null],
             ],
             'status' => [
@@ -58,33 +61,30 @@ return new class implements ContainerAwareInterface {
                     '1' => 'Active',
                     '0' => 'Disabled',
                 ],
-                'value' => (string) $user->getStatus(),
             ],
             'profile_json' => [
                 'label' => 'Profile (JSON)',
                 'type' => 'textarea',
                 'required' => false,
-                'value' => json_encode($user->getProfile(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
                 'attributes' => ['rows' => 5],
             ],
             'preferences_json' => [
                 'label' => 'Preferences (JSON)',
                 'type' => 'textarea',
                 'required' => false,
-                'value' => json_encode($user->getPreferences(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
                 'attributes' => ['rows' => 5],
             ],
             'new_password' => [
-                'label' => 'New password',
+                'label' => $isEdit ? 'New password (optional)' : 'Password',
                 'type' => 'password',
-                'required' => false,
+                'required' => !$isEdit,
                 'filters' => [TrimString::class => null],
                 'validators' => [StringLength::class => [6, null]],
             ],
             'confirm_password' => [
                 'label' => 'Confirm password',
                 'type' => 'password',
-                'required' => false,
+                'required' => !$isEdit,
                 'filters' => [TrimString::class => null],
                 'validators' => [
                     MatchField::class => ['new_password'],
@@ -92,7 +92,27 @@ return new class implements ContainerAwareInterface {
             ],
         ];
 
-        $form = $builder->build('/admin/users/edit/' . $id, $fields, Form::METHOD_POST);
+        $initialValues = $isEdit && $user !== null
+            ? [
+                'email' => $user->getEmail(),
+                'username' => $user->getUsername(),
+                'status' => (string) $user->getStatus(),
+                'profile_json' => json_encode($user->getProfile(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+                'preferences_json' => json_encode($user->getPreferences(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            ]
+            : [
+                'status' => '1',
+                'profile_json' => '{}',
+                'preferences_json' => '{}',
+            ];
+
+        $form = $builder->build(
+            $isEdit ? '/admin/users/form/' . (int) $id : '/admin/users/form',
+            $fields,
+            Form::METHOD_POST,
+            $initialValues
+        );
+
         $submission = $form->processRequest($request);
 
         if ($submission->isValidSubmit()) {
@@ -106,30 +126,55 @@ return new class implements ContainerAwareInterface {
                 $submission = $submission->withSubmissionError($preferences);
             } else {
                 try {
+                    $hasher = $this->getContainer()->get(PasswordHasherInterface::class);
                     $password = $values['new_password'] ?? null;
                     $password = ($password === '' || $password === null) ? null : (string) $password;
 
-                    $repo->updateAdminUser(
-                        userId: $user->getId(),
-                        email: (string) $values['email'],
-                        username: $values['username'] !== '' ? (string) $values['username'] : null,
-                        status: (int) ($values['status'] ?? 1),
-                        profile: $profile,
-                        preferences: $preferences,
-                        passwordHash: $password ? $this->getContainer()->get(\Compose\Web\Auth\PasswordHasherInterface::class)->hash($password) : null
-                    );
+                    if ($isEdit && $user !== null) {
+                        $repo->updateAdminUser(
+                            userId: $user->getId(),
+                            email: (string) $values['email'],
+                            username: $values['username'] !== '' ? (string) $values['username'] : null,
+                            status: (int) ($values['status'] ?? 1),
+                            profile: $profile,
+                            preferences: $preferences,
+                            passwordHash: $password ? $hasher->hash($password) : null
+                        );
+                    } else {
+                        if ($password === null) {
+                            $submission = $submission->withSubmissionError('Password is required.');
+                            return [
+                                'title' => $isEdit ? 'Edit User' : 'Create User',
+                                'form' => $submission,
+                            ];
+                        }
+                        $userId = $repo->create(
+                            email: (string) $values['email'],
+                            username: $values['username'] !== '' ? (string) $values['username'] : null,
+                            passwordHash: $hasher->hash($password)
+                        );
+                        $repo->updateAdminUser(
+                            userId: $userId,
+                            email: (string) $values['email'],
+                            username: $values['username'] !== '' ? (string) $values['username'] : null,
+                            status: (int) ($values['status'] ?? 1),
+                            profile: $profile,
+                            preferences: $preferences,
+                            passwordHash: null
+                        );
+                    }
 
                     return new RedirectResponse('/admin/users');
                 } catch (UniqueConstraintViolationException) {
                     $submission = $submission->withSubmissionError('Email is already in use.');
                 } catch (\Throwable $e) {
-                    $submission = $submission->withSubmissionError('Unable to update user right now.');
+                    $submission = $submission->withSubmissionError('Unable to save user right now.');
                 }
             }
         }
 
         return [
-            'title' => 'Edit User',
+            'title' => $isEdit ? 'Edit User' : 'Create User',
             'form' => $submission,
         ];
     }

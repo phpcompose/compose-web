@@ -125,7 +125,7 @@ final class Config extends BaseConfig
                         'base_path' => '/admin/users',
                         'actions' => [
                             ['name' => 'List', 'path' => '/admin/users', 'icon' => 'bi-list'],
-                            ['name' => 'Create', 'path' => '/admin/users/create', 'icon' => 'bi-plus-lg'],
+                            ['name' => 'Create', 'path' => '/admin/users/form', 'icon' => 'bi-plus-lg'],
                         ],
                     ],
                 ],
