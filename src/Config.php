@@ -61,6 +61,8 @@ final class Config extends BaseConfig
                 \Compose\Web\Auth\AuthService::class => \Compose\Web\Auth\AuthServiceFactory::class,
                 \Compose\Web\Module\User\UserServiceInterface::class => \Compose\Web\Module\User\UserService::class,
                 \Compose\Web\Auth\Middleware\AuthGuardMiddleware::class => \Compose\Web\Auth\Middleware\AuthGuardMiddleware::class,
+                \Compose\Web\Auth\AclService::class => \Compose\Web\Auth\AclService::class,
+                \Compose\Web\Auth\Middleware\AclMiddleware::class => \Compose\Web\Auth\Middleware\AclMiddleware::class,
             ],
             'templates' => [
                 'layout' => 'layout::main',
@@ -75,6 +77,7 @@ final class Config extends BaseConfig
             ],
             'middleware' => [
                 10 => \Compose\Web\Auth\Middleware\AuthGuardMiddleware::class,
+                15 => \Compose\Web\Auth\Middleware\AclMiddleware::class,
             ],
             'email' => [
                 'plugin' => $defaultPlugin,
@@ -103,6 +106,13 @@ final class Config extends BaseConfig
                     ],
                     'exempt' => [],
                 ],
+            ],
+            'acl' => [
+                'rules' => [
+                    '/admin' => ['admin'],
+                    '/admin/users' => ['admin'],
+                ],
+                'deny_message' => 'Forbidden',
             ],
         ];
 
