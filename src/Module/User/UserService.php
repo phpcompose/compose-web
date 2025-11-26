@@ -44,4 +44,5 @@ final class UserService implements UserServiceInterface, ResolvableInterface
         $hash = $this->hasher->hash($plainPassword);
         $this->users->updatePassword($userId, $hash);
     }
+
 }

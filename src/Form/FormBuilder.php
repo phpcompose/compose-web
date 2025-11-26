@@ -75,8 +75,9 @@ final class FormBuilder
 
     /**
      * @param array<string,array> $fields
+     * @param array<string,mixed> $values optional initial values keyed by field name
      */
-    public function build(string $action, array $fields, string $method = Form::METHOD_POST): Form
+    public function build(string $action, array $fields, string $method = Form::METHOD_POST, array $values = []): Form
     {
         $definitions = [];
         foreach ($fields as $name => $definition) {
@@ -85,6 +86,9 @@ final class FormBuilder
             }
 
             $definition['name'] = $definition['name'] ?? (string) $name;
+            if (array_key_exists($definition['name'], $values)) {
+                $definition['value'] = $values[$definition['name']];
+            }
             $definitions[] = $definition;
         }
 

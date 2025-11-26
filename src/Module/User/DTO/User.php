@@ -79,4 +79,21 @@ final class User
     {
         return $this->preferences;
     }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'email' => $this->email,
+            'username' => $this->username,
+            'password_hash' => $this->passwordHash,
+            'status' => $this->status,
+            'roles' => $this->roles,
+            'profile' => $this->profile,
+            'preferences' => $this->preferences,
+        ];
+    }
 }

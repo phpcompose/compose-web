@@ -66,9 +66,11 @@ final class Config extends BaseConfig
                 'layout' => 'layout::main',
                 'folders' => [
                     'layout' => __DIR__ . '/../templates/layout',
+                    'admin' => __DIR__ . '/../templates/admin',
                 ],
                 'helpers' => [
                     'form' => FormHelper::class,
+                    'admin' => \Compose\Web\Template\Helper\AdminHelper::class,
                 ],
             ],
             'middleware' => [
@@ -97,6 +99,7 @@ final class Config extends BaseConfig
                     'protected' => [
                         '/user',
                         '/account',
+                        '/admin',
                     ],
                     'exempt' => [],
                 ],
@@ -113,6 +116,21 @@ final class Config extends BaseConfig
 
         $contact = (new \Compose\Web\Module\Contact\Config())();
         $config = array_replace_recursive($config, $contact);
+        $config = array_replace_recursive($config, [
+            'admin' => [
+                'modules' => [
+                    'user' => [
+                        'display_name' => 'Users',
+                        'icon' => 'bi-people',
+                        'base_path' => '/admin/users',
+                        'actions' => [
+                            ['name' => 'List', 'path' => '/admin/users', 'icon' => 'bi-list'],
+                            ['name' => 'Create', 'path' => '/admin/users/create', 'icon' => 'bi-plus-lg'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
 
         if (empty($config['email']['plugin'])) {
             $config['email']['plugin'] = \Compose\Web\Email\Plugin\LogPlugin::class;

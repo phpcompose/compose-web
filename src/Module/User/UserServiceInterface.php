@@ -22,4 +22,5 @@ interface UserServiceInterface
     public function updateEmail(int $userId, string $email): void;
 
     public function updatePassword(int $userId, string $plainPassword): void;
+
 }
