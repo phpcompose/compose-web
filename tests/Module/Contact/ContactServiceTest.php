@@ -69,7 +69,12 @@ final class ContactServiceTest extends TestCase
             submitted: true
         );
 
-        $service->handleSubmission($submission);
+        $service->handleSubmission($submission, [
+            'to' => 'default@example.com',
+            'from' => 'no-reply@example.com',
+            'subject' => 'Contact submission',
+            'subject_map' => ['sales' => 'sales@example.com'],
+        ]);
 
         self::assertInstanceOf(Message::class, $captor->message);
         $sent = $captor->message;

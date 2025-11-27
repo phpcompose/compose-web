@@ -13,6 +13,10 @@ final class Config
         return [
             'modules' => [
                 'contact' => [
+                    'messages' => [
+                        'success' => 'Thanks! We received your message.',
+                        'error' => 'Please fix the highlighted fields.',
+                    ],
                     'email' => [
                         'to' => 'admin@example.com',
                         'cc' => [],
@@ -23,42 +27,42 @@ final class Config
                             'technical' => 'support@example.com',
                         ],
                     ],
-                    'messages' => [
-                        'success' => 'Thanks! We received your message.',
-                        'error' => 'Please fix the highlighted fields.',
-                    ],
-                    'fields' => [
-                        'name' => [
-                            'label' => 'Full name',
-                            'required' => true,
-                            'validators' => [StringLength::class => [10, 100]],
-                        ],
-                        'email' => [
-                            'label' => 'Email',
-                            'type' => 'email',
-                            'required' => true,
-                        ],
-                        
-                        'subject' => [
-                            'label' => 'Subject',
-                            'type' => 'select',
-                            'required' => true,
-                            'options' => [
-                                '' => 'Select a topic',
-                                'sales' => 'Sales',
-                                'technical' => 'Technical',
+                    'forms' => [
+                        'default' => [
+                            'title' => 'Contact',
+                            'fields' => [
+                                'name' => [
+                                    'label' => 'Full name',
+                                    'required' => true,
+                                    'validators' => [StringLength::class => [10, 100]],
+                                ],
+                                'email' => [
+                                    'label' => 'Email',
+                                    'type' => 'email',
+                                    'required' => true,
+                                ],
+                                'subject' => [
+                                    'label' => 'Subject',
+                                    'type' => 'select',
+                                    'required' => true,
+                                    'options' => [
+                                        '' => 'Select a topic',
+                                        'sales' => 'Sales',
+                                        'technical' => 'Technical',
+                                    ],
+                                ],
+                                'phone' => [
+                                    'label' => 'Phone',
+                                    'type' => 'tel',
+                                    'required' => false,
+                                ],
+                                'message' => [
+                                    'label' => 'Message',
+                                    'type' => 'textarea',
+                                    'required' => true,
+                                    'attributes' => ['rows' => 5],
+                                ],
                             ],
-                        ],
-                        'phone' => [
-                            'label' => 'Phone',
-                            'type' => 'tel',
-                            'required' => false,
-                        ],
-                        'message' => [
-                            'label' => 'Message',
-                            'type' => 'textarea',
-                            'required' => true,
-                            'attributes' => ['rows' => 5],
                         ],
                     ],
                 ],

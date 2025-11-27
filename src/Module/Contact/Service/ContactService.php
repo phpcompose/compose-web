@@ -8,30 +8,38 @@ use Compose\Container\ResolvableInterface;
 use Compose\Support\Configuration;
 use Compose\Web\Email\Emailer;
 use Compose\Web\Form\Submission;
+use Compose\Web\Module\Contact\Repository\ContactEntryRepositoryInterface;
 
 final class ContactService implements ResolvableInterface
 {
-    private array $settings;
-
     public function __construct(
         private readonly Emailer $emailer,
-        Configuration $config
+        private readonly Configuration $config,
+        private readonly ?ContactEntryRepositoryInterface $entries = null
     ) {
-        $this->settings = $config['modules']['contact']['email'] ?? [];
     }
 
-    public function handleSubmission(Submission $submission): void
+    /**
+     * @param array<string,mixed> $emailSettings
+     */
+    public function handleSubmission(Submission $submission, array $emailSettings = [], ?string $formSlug = null): void
     {
         $values = $submission->getValues();
+        $settings = $emailSettings ?: ($this->config['modules']['contact']['email'] ?? []);
+        $slug = $formSlug ?: 'default';
+
+        if ($this->entries !== null) {
+            $this->entries->record($slug, $values);
+        }
 
         $message = $this->emailer->createMessage(
-            $this->resolveSubject($values),
+            $this->resolveSubject($values, $settings),
             $this->buildEmailMessageBody($values)
         );
 
-        $fromEmail = $values['email'] ?? ($this->settings['from'] ?? 'no-reply@example.com');
+        $fromEmail = $values['email'] ?? ($settings['from'] ?? 'no-reply@example.com');
         $message->setFrom($fromEmail, $values['name'] ?? null);
-        $message->addTo($this->resolveRecipient($values));
+        $message->addTo($this->resolveRecipient($values, $settings));
 
         $this->emailer->send($message);
     }
@@ -55,21 +63,21 @@ final class ContactService implements ResolvableInterface
         return implode(PHP_EOL, $lines);
     }
 
-    private function resolveRecipient(array $values): string
+    private function resolveRecipient(array $values, array $settings): string
     {
-        $default = $this->settings['to'] ?? 'admin@example.com';
+        $default = $settings['to'] ?? 'admin@example.com';
         $subjectKey = $values['subject'] ?? null;
         if (!$subjectKey) {
             return $default;
         }
 
-        $map = $this->settings['subject_map'] ?? [];
+        $map = $settings['subject_map'] ?? [];
         return $map[$subjectKey] ?? $default;
     }
 
-    private function resolveSubject(array $values): string
+    private function resolveSubject(array $values, array $settings): string
     {
-        $subject = $this->settings['subject'] ?? 'Contact submission received';
+        $subject = $settings['subject'] ?? 'Contact submission received';
         if (!empty($values['subject'])) {
             return sprintf('%s: %s', $subject, (string) $values['subject']);
         }

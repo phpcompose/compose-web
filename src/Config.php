@@ -63,6 +63,7 @@ final class Config extends BaseConfig
                 \Compose\Web\Auth\Middleware\AuthGuardMiddleware::class => \Compose\Web\Auth\Middleware\AuthGuardMiddleware::class,
                 \Compose\Web\Auth\AclService::class => \Compose\Web\Auth\AclService::class,
                 \Compose\Web\Auth\Middleware\AclMiddleware::class => \Compose\Web\Auth\Middleware\AclMiddleware::class,
+                \Compose\Web\Module\Contact\Repository\ContactEntryRepositoryInterface::class => \Compose\Web\Module\Contact\Repository\DbalContactEntryRepository::class,
             ],
             'templates' => [
                 'layout' => 'layout::main',
@@ -136,6 +137,14 @@ final class Config extends BaseConfig
                         'actions' => [
                             ['name' => 'List', 'path' => '/admin/users', 'icon' => 'bi-list'],
                             ['name' => 'Create', 'path' => '/admin/users/form', 'icon' => 'bi-plus-lg'],
+                        ],
+                    ],
+                    'contact' => [
+                        'display_name' => 'Contact',
+                        'icon' => 'bi-inbox',
+                        'base_path' => '/admin/contact',
+                        'actions' => [
+                            ['name' => 'Entries', 'path' => '/admin/contact/list', 'icon' => 'bi-list'],
                         ],
                     ],
                 ],
